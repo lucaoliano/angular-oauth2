@@ -39,7 +39,7 @@ function OAuthTokenProvider() {
    * OAuthToken service.
    */
 
-  this.$get = function($cookies) {
+  this.$get = function($cookies, jwtHelper) {
     class OAuthToken {
 
       /**
@@ -47,7 +47,10 @@ function OAuthTokenProvider() {
        */
 
       setToken(data) {
-        return $cookies.putObject(config.name, data, config.options);
+        // return $cookies.putObject(config.name, data, config.options);
+        var exp = jwtHelper.decodeToken(data.refresh_token).exp;
+        localStorage.setItem(config.name + '_expires', exp * 1000);
+        localStorage.setItem(config.name, JSON.stringify(data));
       }
 
       /**
@@ -55,7 +58,15 @@ function OAuthTokenProvider() {
        */
 
       getToken() {
-        return $cookies.getObject(config.name);
+        // return $cookies.getObject(config.name);
+        var expires = parseInt(localStorage.getItem(config.name + '_expires'));
+        if (isNaN(expires) || new Date().getTime() >= expires) {
+          localStorage.removeItem(config.name);
+          localStorage.removeItem(config.name + '_expires');
+          return;
+        }
+        var token = localStorage.getItem(config.name);
+        return token ? JSON.parse(localStorage.getItem(config.name)) : undefined;
       }
 
       /**
@@ -108,14 +119,16 @@ function OAuthTokenProvider() {
        */
 
       removeToken() {
-        return $cookies.remove(config.name, config.options);
+        // return $cookies.remove(config.name, config.options);
+        localStorage.removeItem(config.name);
+        localStorage.removeItem(config.name + '_expires');
       }
     }
 
     return new OAuthToken();
   };
 
-  this.$get.$inject = ['$cookies'];
+  this.$get.$inject = ['$cookies', 'jwtHelper'];
 }
 
 /**

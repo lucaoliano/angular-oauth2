@@ -13,7 +13,11 @@
         root.angularOAuth2 = factory(root.angular, "ngCookies", root.queryString);
     }
 })(this, function(angular, ngCookies, queryString) {
-    var ngModule = angular.module("angular-oauth2", [ ngCookies ]).config(oauthConfig).factory("oauthInterceptor", oauthInterceptor).provider("OAuth", OAuthProvider).provider("OAuthToken", OAuthTokenProvider);
+    var ngModule = angular.module("angular-oauth2", [ ngCookies, "angular-jwt" ]).config(oauthConfig).factory("oauthInterceptor", oauthInterceptor).provider("OAuth", OAuthProvider).provider("OAuthToken", OAuthTokenProvider);
+    function oauthConfig($httpProvider) {
+        $httpProvider.interceptors.push("oauthInterceptor");
+    }
+    oauthConfig.$inject = [ "$httpProvider" ];
     function oauthInterceptor($q, $rootScope, OAuthToken, $injector) {
         return {
             request: function request(config) {
@@ -60,10 +64,6 @@
         };
     }
     oauthInterceptor.$inject = [ "$q", "$rootScope", "OAuthToken", "$injector" ];
-    function oauthConfig($httpProvider) {
-        $httpProvider.interceptors.push("oauthInterceptor");
-    }
-    oauthConfig.$inject = [ "$httpProvider" ];
     var _createClass = function() {
         function defineProperties(target, props) {
             for (var i = 0; i < props.length; i++) {
@@ -245,7 +245,7 @@
             angular.extend(config, params);
             return config;
         };
-        this.$get = function($cookies) {
+        this.$get = function($cookies, jwtHelper) {
             var OAuthToken = function() {
                 function OAuthToken() {
                     _classCallCheck(this, OAuthToken);
@@ -253,12 +253,21 @@
                 _createClass(OAuthToken, [ {
                     key: "setToken",
                     value: function setToken(data) {
-                        return $cookies.putObject(config.name, data, config.options);
+                        var exp = jwtHelper.decodeToken(data.refresh_token).exp;
+                        localStorage.setItem(config.name + "_expires", exp * 1e3);
+                        localStorage.setItem(config.name, JSON.stringify(data));
                     }
                 }, {
                     key: "getToken",
                     value: function getToken() {
-                        return $cookies.getObject(config.name);
+                        var expires = parseInt(localStorage.getItem(config.name + "_expires"));
+                        if (isNaN(expires) || new Date().getTime() >= expires) {
+                            localStorage.removeItem(config.name);
+                            localStorage.removeItem(config.name + "_expires");
+                            return;
+                        }
+                        var token = localStorage.getItem(config.name);
+                        return token ? JSON.parse(localStorage.getItem(config.name)) : undefined;
                     }
                 }, {
                     key: "getAccessToken",
@@ -294,14 +303,15 @@
                 }, {
                     key: "removeToken",
                     value: function removeToken() {
-                        return $cookies.remove(config.name, config.options);
+                        localStorage.removeItem(config.name);
+                        localStorage.removeItem(config.name + "_expires");
                     }
                 } ]);
                 return OAuthToken;
             }();
             return new OAuthToken();
         };
-        this.$get.$inject = [ "$cookies" ];
+        this.$get.$inject = [ "$cookies", "jwtHelper" ];
     }
     return ngModule;
 });

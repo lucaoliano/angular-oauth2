@@ -11,7 +11,8 @@ import oauthInterceptor from './interceptors/oauth-interceptor';
 import ngCookies from 'angular-cookies';
 
 var ngModule = angular.module('angular-oauth2', [
-    ngCookies
+    ngCookies,
+    'angular-jwt'
   ])
   .config(oauthConfig)
   .factory('oauthInterceptor', oauthInterceptor)

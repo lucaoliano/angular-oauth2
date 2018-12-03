@@ -21,7 +21,9 @@
     "url": "https://github.com/seegno/angular-oauth2/issues"
   },
   "homepage": "https://github.com/seegno/angular-oauth2",
-  "dependencies": {},
+  "dependencies": {
+    "angular-jwt": "0.1.10"
+  },
   "devDependencies": {
     "angular": "^1.5.9",
     "angular-cookies": "^1.5.9",

@@ -32,8 +32,9 @@ function oauthInterceptor($q, $rootScope, OAuthToken, $injector) {
       // Catch `invalid_token` and `unauthorized` errors.
       // The token isn't removed here so it can be refreshed when the `invalid_token` error occurs.
       if (401 === rejection.status &&
-        (rejection.data && rejection.data.error && 'invalid_token' === rejection.data.error) ||
-        (rejection.headers && rejection.headers('www-authenticate') && 0 === rejection.headers('www-authenticate').indexOf('Bearer'))
+        $injector.get('OAuthToken').getRefreshToken() &&
+        ((rejection.data && rejection.data.error && 'invalid_token' === rejection.data.error) ||
+        (rejection.headers && rejection.headers('www-authenticate') && 0 === rejection.headers('www-authenticate').indexOf('Bearer')))
       ) {
         let deferred = $q.defer();
         $injector.get('OAuth').getRefreshToken().then(() => {

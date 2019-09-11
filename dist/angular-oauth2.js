@@ -35,7 +35,7 @@
                     OAuthToken.removeToken();
                     $rootScope.$emit("oauth:error", rejection);
                 }
-                if (401 === rejection.status && rejection.data && rejection.data.error && "invalid_token" === rejection.data.error || rejection.headers && rejection.headers("www-authenticate") && 0 === rejection.headers("www-authenticate").indexOf("Bearer")) {
+                if (401 === rejection.status && $injector.get("OAuthToken").getRefreshToken() && (rejection.data && rejection.data.error && "invalid_token" === rejection.data.error || rejection.headers && rejection.headers("www-authenticate") && 0 === rejection.headers("www-authenticate").indexOf("Bearer"))) {
                     var _ret = function() {
                         var deferred = $q.defer();
                         $injector.get("OAuth").getRefreshToken().then(function() {
